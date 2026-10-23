@@ -1,0 +1,6 @@
+ENVI ASCII Plot File [Wed Jul 06 15:13:28 2011]
+Column 1: Wavelength
+Column 2: Water ice.txt:C2~~1
+   0.420000  1.880000
+   0.422000  1.880000
+   0.424000  1.880000
