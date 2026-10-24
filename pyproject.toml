@@ -25,3 +25,7 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.2",
 ]
+docs = [
+    "pandas>=3.1.0",
+    "plotly>=7.1.0",
+]
