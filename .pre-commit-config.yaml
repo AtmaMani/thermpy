@@ -49,6 +49,16 @@ repos:
         types: [python]
         files: ^src/
         pass_filenames: true
+  
+  # Pytest for tests
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run pytest
+        entry: uv run pytest
+        language: system
+        types: [python]
+        files: ^tests/
 
 default_language_version:
   python: python3.14
