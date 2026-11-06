@@ -21,8 +21,10 @@ def radiance_to_temperature(
     """
     Convert radiance to temperature by inverting Planck's law.
 
-    The temperature is linearly interpolated from a lookup table. Radiance outside the
-    table's range returns NaN rather than being clamped to the table's end temperatures.
+    The temperature is linearly interpolated from the input lookup table. Radiance outside the
+    table's range returns NaN rather than being clamped to the table's end temperatures. If the
+    look up table is None, then it is computed for the given wavelengths and an assumed temperature
+    interval.
 
     Parameters
     ----------
@@ -54,10 +56,11 @@ def radiance_to_temperature(
             f"not {wavelength_band}"
         )
 
+    # interpolate to find temperature using the look up table.
     return np.interp(
-        radiance,
-        rad2temp_lut.radiance,
-        rad2temp_lut.temperature,
-        left=np.nan,
-        right=np.nan,
+        x=radiance,  # measured radiance
+        xp=rad2temp_lut.radiance,  # Known x-coordinates
+        fp=rad2temp_lut.temperature,  # Known y-coordinates
+        left=np.nan,  # return NaN if below
+        right=np.nan,  # return NaN if above
     )
