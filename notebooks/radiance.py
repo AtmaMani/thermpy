@@ -80,7 +80,11 @@ def _(np, pd, px, thermpy):
     # Build DataFrame for Plotly Express
     data = []
     for temp in temperature_steps:
-        radiances = [thermpy.radiance_utilities.blackbody_radiance(w, temp) for w in wavelengths]
+        # exp() overflows to inf at very short wavelengths, giving a radiance of 0, which is correct
+        with np.errstate(over="ignore"):
+            radiances = [
+                thermpy.radiance_utilities.blackbody_radiance(w, temp) for w in wavelengths
+            ]
         # Create temporary rows for each wavelength-temperature pairing
         temp_df = pd.DataFrame(
             {
