@@ -35,7 +35,7 @@ def _(mo):
     mo.md(r"""
     ## The sensor band
 
-    Radiance is only meaningful for a given wavelength band, which is determined by your sensor. `thermpy.constants` defines a few common thermal bands, and `thermpy.defaults` picks `DEFAULT_LWIR_BAND` for use in the examples.
+    Radiance is only meaningful for a given wavelength band, which is determined by your sensor. The `thermpy.constants` defines a few common thermal bands, and `thermpy.defaults` picks `DEFAULT_LWIR_BAND` for use in the examples.
     """)
 
 
@@ -62,6 +62,7 @@ def _(defaults, radiance_utilities):
     band = defaults.DEFAULT_LWIR_BAND
     radiance_293 = radiance_utilities.blackbody_spectral_radiance(*band, temperature_k=293)
     print(f"{radiance_293:.4f} W/m^2/sr")
+    return band, radiance_293
 
 
 @app.cell(hide_code=True)
@@ -104,6 +105,7 @@ def _(band, defaults, radiance_utilities):
         round(lut.radiance[-1], 3),
         "W/m^2/sr",
     )
+    return (lut,)
 
 
 @app.cell(hide_code=True)
@@ -127,21 +129,30 @@ def _(lut, px):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Converting a single measurement, and many at once
+    ## Converting a array of radiance to temperatures
 
-    Both scalars and NumPy arrays of any shape are accepted. Pass the LUT you built to avoid rebuilding it.
+    The `radiance_to_temperature()` conveniently converts both scalars and NumPy arrays. This means, you can pass scalars (individual measurements), 1D arrays (a list of measurements), 2D arrays (an image captured using thermal camera) and convert them to temperature outputs. The dimension of input is preserved.
+
+    Additionally, you can pass the LUT you built to avoid rebuilding it. In this conversion, building the LUT is the expensive part.
     """)
 
 
 @app.cell
 def _(band, lut, planck_invert):
-    planck_invert.radiance_to_temperature(45.0, wavelength_band=band, rad2temp_lut=lut)
+    # convert a scalar radiance value to temperature
+    planck_invert.radiance_to_temperature(30.0, wavelength_band=band, rad2temp_lut=lut)
+
+
+@app.cell
+def _(band, lut, planck_invert):
+    # convert an 1D array of radiance value to temperature
+    planck_invert.radiance_to_temperature([35.0, 38.0], wavelength_band=band, rad2temp_lut=lut)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### A simulated radiance image
+    ### Convert 2D array of radiance to temperature - demonstration using simulated radiance raster
 
     A thermal image is just a 2D array of radiances. Below we simulate a scene whose true temperature rises smoothly from $258\,K$ to $288\,K$ with a warm "hot spot", compute the radiance a sensor would see, then recover the temperature from that radiance alone.
     """)
@@ -154,14 +165,14 @@ def _(band, np, radiance_utilities):
     _hot_spot = 6 * np.exp(-(((_x - 40) ** 2 + (_y - 20) ** 2) / 60))
     true_temperature = 258 + 24 * (_x + _y) / (2 * _n) + _hot_spot
 
-    # Forward model on a coarse grid of temperatures, then interpolate. This is
-    # only to synthesize the "measured" image quickly.
+    # For demo purposes, start with temperature, to generate radiance values
     _grid = np.linspace(true_temperature.min(), true_temperature.max(), 200)
     _grid_rad = np.array(
         [radiance_utilities.blackbody_spectral_radiance(*band, float(t)) for t in _grid]
     )
     radiance_image = np.interp(true_temperature, _grid, _grid_rad)
     print("Radiance image shape:", radiance_image.shape)
+    return radiance_image, true_temperature
 
 
 @app.cell
@@ -170,9 +181,10 @@ def _(band, lut, planck_invert, radiance_image):
         radiance_image, wavelength_band=band, rad2temp_lut=lut
     )
     print("Temperature image shape:", temperature_image.shape)
+    return (temperature_image,)
 
 
-@app.cell
+@app.cell(expand_output=True)
 def _(mo, px, radiance_image, temperature_image):
     _radiance_fig = px.imshow(
         radiance_image,
@@ -186,7 +198,7 @@ def _(mo, px, radiance_image, temperature_image):
         title="Temperature (K)",
         labels={"color": "K"},
     )
-    mo.hstack([_radiance_fig, _temperature_fig])
+    mo.vstack([_radiance_fig, _temperature_fig])
 
 
 @app.cell(hide_code=True)
@@ -238,6 +250,7 @@ def _(planck_invert, radiance_utilities):
     planck_invert.radiance_to_temperature(
         _measured, wavelength_band=custom_band, rad2temp_lut=custom_lut
     )
+    return (custom_lut,)
 
 
 @app.cell(hide_code=True)
